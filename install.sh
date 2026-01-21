@@ -139,6 +139,10 @@ main() {
     # FactoryAI Droid
     install_to "FactoryAI Droid (Global)" \
       "${HOME}/.factory/skills"
+
+    # Agents
+    install_to "Agents (Global)" \
+      "${HOME}/.config/agents/skills"
   else
     # OpenCode
     install_to "OpenCode (Local)" \
@@ -156,6 +160,10 @@ main() {
     # FactoryAI Droid
     install_to "FactoryAI Droid (Local)" \
       ".factory/skills"
+
+    # Agents
+    install_to "Agents (Local)" \
+      ".agents/skills"
   fi
 
   echo "Done."
