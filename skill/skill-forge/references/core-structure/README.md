@@ -2,12 +2,15 @@
 
 ## Folder Layout
 
-{skill-name}/
-├── skill/{skill-name}/
+skill-forge/
+├── skill/
+│ └���─ {skill-name}/
 │ ├── SKILL.md # CAPITALIZED manifest router
+│ ├── README.md # Skill overview
 │ └── references/ # {topic}/[README api config patterns gotchas].md
-├── command/{skill-name}.md # OpenCode slash command
-└── install.sh # Systematic installer
+├── command/
+│ └── {skill-name}.md # OpenCode slash command
+└── install.sh # Global installer for all skills in this folder
 
 ## SKILL.md YAML
 

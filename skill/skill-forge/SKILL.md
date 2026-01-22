@@ -18,47 +18,59 @@ Expert AgentSkills.io architect. ONLY create, refine, package perfect custom Ski
 
 ## Non-Negotiable, Golden Rules
 
-- Exact folder structure: skill/{skill-name}/SKILL.md (CAPITALIZED), command/{skill-name}.md, install.sh
-- Folder: kebab-case
-- SKILL.md YAML first: name, description, references[]
-- NO lowercase skill.md, NO colons in description, NO single-file dumps for complex topics
-- references/ MANDATORY: README.md, api.md, configuration.md, patterns.md, gotchas.md per topic
-- command/ Markdown with OpenCode slash command format
-- install.sh MUST replicate the Systematic Installer Pattern (see verbatim template in references/install-script/template.sh)
-- Verbatim APIs/configs from docs
-- Examples: 2-3 input/output clusters
-- Max info density: bullets > paragraphs, sacrifice grammar for facts
+- Target directory: `./skill-forge/` by default.
+- Additive behavior: ALWAYS preserve existing skills and commands in `./skill-forge/`. DO NOT overwrite other skills.
+- Structure:
+  - `skill-forge/skill/{skill-name}/SKILL.md` (CAPITALIZED)
+  - `skill-forge/skill/{skill-name}/README.md`
+  - `skill-forge/command/{skill-name}.md`
+  - `skill-forge/install.sh` (Single root installer for ALL skills)
+- Folder: kebab-case.
+- SKILL.md YAML first: name, description, references[].
+- NO lowercase skill.md, NO colons in description.
+- references/ MANDATORY: README.md, api.md, configuration.md, patterns.md, gotchas.md per topic.
+- command/ Markdown with OpenCode slash command format.
+- install.sh MUST replicate the Multi-Skill Installer Pattern (see verbatim template in references/install-script/template.sh).
+- Supports `--self`, `--global`/`--local`.
+- Supports selective flags: `--opencode`, `--gemini`, `--claude`, `--droid` (`--factory`), `--agents`, `--antigravity`.
+- Defaults to interactive mode if no flags are provided.
+- Interactive mode prompts for scope (Global/Local), agent selection, and skill selection.
+- Interactive mode prompts to update `.gitignore` for local installs.
+- Verbatim APIs/configs from docs.
+- Examples: 2-3 input/output clusters.
+- Max info density: bullets > paragraphs, sacrifice grammar for facts.
 
 ## Workflow Decision Tree
 
 ```
 Request: create or refine skill for [topic]
 A. Clarify scope
-   - skill name, repo URL, target platforms (OpenCode/Gemini/Claude/FactoryAI)
-   - elite knowledge topics that need references/
+   - skill name, repo URL, target platforms
+   - check if ./skill-forge exists; prepare for additive update
 B. Research
    - APIs, configs, lifecycle, known issues
 C. Design
    - description (<=200 chars, no colons)
    - references/{topic} layout
-D. Write references/{topic}/
+D. Write references/ under skill-forge/skill/{skill-name}/
    - README.md: overview, when to use, decision tree
    - api.md: verbatim signatures/types
    - configuration.md: schemas/keys/wiring
    - patterns.md: multi-step implementations
    - gotchas.md: pitfalls/limitations
-E. Assemble
-   - SKILL.md: YAML + rules + workflow + examples
+E. Assemble under ./skill-forge/
+   - skill/{skill-name}/SKILL.md: YAML + rules + workflow + examples
+   - skill/{skill-name}/README.md: High-level overview
    - command/{skill-name}.md: OpenCode command template
-   - install.sh: Systematic Installer Pattern
-Result: full {skill-name}/ tree ready to install
+   - install.sh: Multi-Skill Installer Pattern (Update or create at root)
+Result: Updated ./skill-forge/ tree with new skill/command added
 ```
 
 ## References
 
 - **references/core-structure/README.md**: Folder layout, SKILL.md YAML schema, command format. Provides the skeleton every skill must follow. Check before creating new skills.
 - **references/build-patterns/README.md**: When to split references/, 5-file topic set, A-E workflow, best practices. Prevents bloated SKILL.md and ensures consistent structure.
-- **references/install-script/template.sh**: Verbatim installer template with safety guards, --global/--local/--self flags, multi-platform paths. MUST use for all generated install.sh files.
+- **references/install-script/template.sh**: Multi-Skill Installer Template. Supports interactive mode, selective agent targeting, and gitignore updates. MUST use for all generated install.sh files.
 
 ## Examples
 
@@ -71,7 +83,7 @@ Result: full {skill-name}/ tree ready to install
 - references/persistent-storage/gotchas.md: no persistent globals
 
 **Input:** Package TypeScript skill with install  
-**Output:** Generated install.sh using the Systematic Installer Template from references/install-script/template.sh
+**Output:** Generated install.sh using the Multi-Skill Installer Template from references/install-script/template.sh. Supports `--self`, `--global`, `--local`, and selective flags like `--claude`.
 
 **Input:** Refine existing agent md to skill  
 **Output:** Parse, extract to structured refs, command, install

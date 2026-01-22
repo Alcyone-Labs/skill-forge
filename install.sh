@@ -1,178 +1,366 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# === CONFIGURATION ===
 REPO_URL="https://github.com/AlcyoneLabs/skill-forge.git"
-SKILL_NAME="skill-forge"
+PROJECT_NAME="skill-forge"
+# ======================
+
+
 
 usage() {
   cat <<EOF
 Usage: $0 [OPTIONS]
 
-Install the skill-forge skill for OpenCode, Gemini CLI, Claude, FactoryAI Droid, Agents, and Antigravity.
+Install skills from ${PROJECT_NAME} collection.
 
 Options:
-  -g, --global    Install globally (user scope) [default]
-  -l, --local     Install locally (.opencode/skills/, .gemini/skills/, etc.)
   -s, --self      Install from local filesystem (for testing/dev)
+  -g, --global    Install globally (user scope ~/)
+  -l, --local     Install locally (project ./)
   -h, --help      Show this help message
 
-Examples:
-  curl -fsSL https://raw.githubusercontent.com/AlcyoneLabs/skill-forge/main/install.sh | bash
-  ./install.sh --self --local
+Selective Flags:
+  --opencode      Target OpenCode only
+  --gemini        Target Gemini CLI only
+  --claude        Target Claude only
+  --droid         Target FactoryAI Droid only
+  --agents        Target Agents only (Default if no flags)
+  --antigravity   Target Antigravity only
+
+Interactive Mode:
+  If no flags are provided, an interactive prompt will guide you.
 EOF
 }
 
-# Strict validation of naming and environment
-validate_env() {
-  if [[ -z "${SKILL_NAME}" ]]; then
-    echo "Critical Error: SKILL_NAME is unset." >&2
-    exit 1
-  fi
-  if [[ "${SKILL_NAME}" == *"/"* ]] || [[ "${SKILL_NAME}" == *" "* ]] || [[ "${SKILL_NAME}" == ".." ]]; then
-    echo "Critical Error: SKILL_NAME contains illegal characters or path separators." >&2
-    exit 1
+
+
+# Helper to add to .gitignore if not present
+update_gitignore() {
+  local entry="$1"
+  if [[ -f ".gitignore" ]]; then
+    if grep -qF "$entry" .gitignore; then
+      return
+    fi
+    echo "" >> .gitignore
+    echo "# Added by ${PROJECT_NAME} installer" >> .gitignore
+    echo "$entry" >> .gitignore
+    echo "Added '$entry' to .gitignore"
   fi
 }
 
 main() {
-  local install_type="global"
+  local install_type="interactive" # Default to interactive if no flags
   local self_install=false
+  local target_platforms=() # Default empty, interactive will set it or agents default
+  local target_skills=()
 
+  # 1. Parse Arguments
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -g|--global) install_type="global"; shift ;;
       -l|--local) install_type="local"; shift ;;
       -s|--self) self_install=true; shift ;;
       -h|--help) usage; exit 0 ;;
+      --opencode) target_platforms+=("OpenCode"); shift ;;
+      --gemini) target_platforms+=("Gemini CLI"); shift ;;
+      --claude) target_platforms+=("Claude"); shift ;;
+      --droid) target_platforms+=("FactoryAI Droid"); shift ;;
+      --factory) target_platforms+=("FactoryAI Droid"); shift ;;
+      --agents) target_platforms+=("Agents"); shift ;;
+      --antigravity) target_platforms+=("Antigravity"); shift ;;
       *) echo "Unknown option: $1"; usage; exit 1 ;;
     esac
   done
 
-  validate_env
-
-  echo "Installing ${SKILL_NAME} skill (${install_type})..."
-
-  # 1. Setup Source
+  # Detect Source
   local src_dir
   if [[ "$self_install" == true ]]; then
     src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    echo "Using local source: ${src_dir}"
   else
     src_dir=$(mktemp -d)
     trap "rm -rf '$src_dir'" EXIT
-    echo "Fetching skill from ${REPO_URL}..."
     git clone --depth 1 --quiet "$REPO_URL" "$src_dir"
   fi
 
-  # 2. Installation Helper with Deep Safety Checks
-  install_to() {
-    local platform_name=$1
-    local base_dir=$2
-    local command_dir=${3:-""}
+  # 2. Interactive Logic
+  if [[ "$install_type" == "interactive" ]] || [[ ${#target_platforms[@]} -eq 0 ]]; then
+    install_type="global" # Reset default for interactive flow
 
-    local target_skill_dir="${base_dir}/${SKILL_NAME}"
+    # A. Select Scope
+    echo ""
+    PS3="Select installation scope: "
+    select scope_choice in "Install Globally (userspace ~/)" "Install locally (project ./)"; do
+      case "$REPLY" in
+        1) install_type="global"; break ;;
+        2) install_type="local"; break ;;
+        *) echo "Invalid selection." ;;
+      esac
+    done
 
-    # CRITICAL: Prevent accidental deletion of root, home, or system directories
-    if [[ -z "$target_skill_dir" ]] || [[ "$target_skill_dir" == "/" ]] || [[ "$target_skill_dir" == "$HOME" ]] || [[ "$target_skill_dir" == "$HOME/" ]]; then
-      echo "Safety Error: Target path is restricted: $target_skill_dir" >&2
+    # B. Select Agents
+    echo ""
+    echo "Select agents (toggle with number, comma/space separated, choose Done when finished):"
+    local choice=""
+    local agent_input=""
+    while true; do
+      local selection_count=0
+      if declare -p target_platforms >/dev/null 2>&1; then
+        selection_count=${#target_platforms[@]}
+      fi
+      if [[ "$selection_count" -gt 0 ]]; then
+        local joined=""
+        for p in "${target_platforms[@]}"; do
+          if [[ -n "$joined" ]]; then
+            joined="${joined}, ${p}"
+          else
+            joined="$p"
+          fi
+        done
+        echo "Current selection: ${joined}"
+      else
+        echo "Current selection: (none)"
+      fi
+
+      local select_all_label="Select All"
+      if [[ "$selection_count" -gt 0 ]]; then
+        select_all_label="Deselect All"
+      fi
+      echo "1) OpenCode  2) Gemini CLI  3) Claude  4) FactoryAI Droid"
+      echo "5) Agents    6) Antigravity 7) ${select_all_label}  8) Done"
+      read -r -p "Agent(s): " agent_input
+      agent_input="${agent_input//,/ }"
+
+      if [[ -z "$agent_input" ]]; then
+        echo "Invalid selection."
+        echo ""
+        continue
+      fi
+
+      if [[ "$agent_input" == "done" || "$agent_input" == "8" ]]; then
+        break
+      fi
+
+      if [[ "$agent_input" == "all" || "$agent_input" == "7" ]]; then
+        local has_selection=0
+        if declare -p target_platforms >/dev/null 2>&1; then
+          has_selection=${#target_platforms[@]}
+        fi
+        if [[ "$has_selection" -gt 0 ]]; then
+          target_platforms=()
+          echo "Deselected: All"
+        else
+          target_platforms=("OpenCode" "Gemini CLI" "Claude" "FactoryAI Droid" "Agents" "Antigravity")
+          echo "Selected: All"
+        fi
+        echo ""
+        continue
+      fi
+
+      if [[ "$agent_input" =~ ^[0-9]+$ ]]; then
+        local digits=()
+        local i
+        for ((i=0; i<${#agent_input}; i++)); do
+          digits+=("${agent_input:$i:1}")
+        done
+        agent_input="${digits[*]}"
+      fi
+
+      for idx in $agent_input; do
+        case "$idx" in
+          1) choice="OpenCode" ;;
+          2) choice="Gemini CLI" ;;
+          3) choice="Claude" ;;
+          4) choice="FactoryAI Droid" ;;
+          5) choice="Agents" ;;
+          6) choice="Antigravity" ;;
+          7) choice="__all__" ;;
+          8) choice="__done__" ;;
+          *) choice="__invalid__" ;;
+        esac
+
+        case "$choice" in
+          "__all__")
+            local has_selection=0
+            if declare -p target_platforms >/dev/null 2>&1; then
+              has_selection=${#target_platforms[@]}
+            fi
+            if [[ "$has_selection" -gt 0 ]]; then
+              target_platforms=()
+              echo "Deselected: All"
+            else
+              target_platforms=("OpenCode" "Gemini CLI" "Claude" "FactoryAI Droid" "Agents" "Antigravity")
+              echo "Selected: All"
+            fi
+            ;;
+          "__done__")
+            break 2
+            ;;
+          "__invalid__")
+            echo "Invalid selection: $idx"
+            ;;
+          *)
+            if [[ " ${target_platforms[*]-} " =~ " ${choice} " ]]; then
+              local updated=()
+              for p in "${target_platforms[@]}"; do
+                [[ "$p" == "$choice" ]] && continue
+                updated+=("$p")
+              done
+              if [[ ${#updated[@]} -eq 0 ]]; then
+                unset target_platforms
+              else
+                target_platforms=("${updated[@]}")
+              fi
+              echo "Deselected: $choice"
+            else
+              target_platforms+=("$choice")
+              echo "Selected: $choice"
+            fi
+            ;;
+        esac
+      done
+      echo ""
+    done
+
+    # Fallback if empty
+    local final_count=0
+    if declare -p target_platforms >/dev/null 2>&1; then
+      final_count=${#target_platforms[@]}
+    fi
+    if [[ "$final_count" -eq 0 ]]; then
+      target_platforms=("Agents")
+      echo "No agents selected, defaulting to Agents."
+    fi
+  fi
+
+  # C. Select Skills
+  # Detect skills in src_dir/skill/
+  available_skills=()
+  if [[ -d "${src_dir}/skill" ]]; then
+    for skill_dir in "${src_dir}/skill"/*; do
+      [[ -d "$skill_dir" ]] || continue
+      available_skills+=("$(basename "$skill_dir")")
+    done
+  fi
+
+  if [[ ${#available_skills[@]} -gt 1 ]]; then
+    echo ""
+    echo "Available Skills in this package:"
+    PS3="Select skills to install (number), 'all' for all, 'done' when finished: "
+    select skill in "${available_skills[@]}" "all" "done"; do
+      [[ "$skill" == "done" ]] && break
+      if [[ "$skill" == "all" ]]; then
+        target_skills=("${available_skills[@]}")
+        break
+      fi
+      if [[ -n "$skill" ]]; then
+        if [[ ! " ${target_skills[*]} " =~ " ${skill} " ]]; then
+          target_skills+=("$skill")
+          echo "Added: $skill"
+        fi
+      fi
+    done
+  else
+    target_skills=("${available_skills[@]}")
+  fi
+
+  # If no skills found or selected (e.g. root package), skip skill loop
+  if [[ ${#target_skills[@]} -eq 0 ]] && [[ -d "${src_dir}/skill" ]]; then
+     # Should not happen if default selection works, but safe fallback:
+     target_skills=("${available_skills[@]}")
+  fi
+
+  # D. Gitignore (Local only)
+  if [[ "$install_type" == "local" ]]; then
+    read -p "Add local agent folders to .gitignore? (y/n): " gitignore_choice
+    if [[ "$gitignore_choice" =~ ^[Yy]$ ]]; then
+      for p in "${target_platforms[@]}"; do
+        local p_dir
+        case "$p" in
+          "OpenCode") p_dir=".opencode" ;;
+          "Gemini CLI") p_dir=".gemini" ;;
+          "Claude") p_dir=".claude" ;;
+          "FactoryAI Droid") p_dir=".factory" ;;
+          "Agents") p_dir=".agents" ;;
+          "Antigravity") p_dir=".antigravity" ;;
+          *) continue ;;
+        esac
+        update_gitignore "$p_dir/"
+      done
+    fi
+  fi
+
+  echo ""
+  echo "Installing ${PROJECT_NAME} to ${install_type} targets..."
+
+  # 3. Installation Helper
+  install_skill_to() {
+    local platform="$1"
+    local skill_name="$2"
+    local base_dir="$3"
+    local command_dir="${4:-}"
+
+    local target_skill_dir="${base_dir}/${skill_name}"
+
+    # Safety checks...
+    if [[ -z "$skill_name" ]] || [[ "$target_skill_dir" == "/" ]] || [[ "$target_skill_dir" == "$HOME" ]]; then
       return 1
     fi
 
-    # Only proceed if the platform parent exists (for global) or we are in local mode
-    if [[ -d "${base_dir%/*}" ]] || [[ "$install_type" == "local" ]]; then
-      echo "Installing to ${platform_name}..."
-      mkdir -p "$base_dir"
+    mkdir -p "$base_dir"
+    rm -rf "$target_skill_dir"
+    cp -r "${src_dir}/skill/${skill_name}" "$target_skill_dir"
 
-      if [[ -d "$target_skill_dir" ]]; then
-        # ENSURE we only delete the specific skill folder, double-checking it matches SKILL_NAME
-        case "$target_skill_dir" in
-          */"${SKILL_NAME}")
-            rm -rf "$target_skill_dir"
-            ;;
-          *)
-            echo "Safety Error: Target directory does not end in ${SKILL_NAME}. Aborting deletion." >&2
-            exit 1
-            ;;
-        esac
-      fi
+    # Standardize SKILL.md
+    if [[ -f "${target_skill_dir}/Skill.md" ]]; then
+      mv "${target_skill_dir}/Skill.md" "${target_skill_dir}/SKILL.md"
+    fi
+    echo "  - Installed skill: ${skill_name} to ${platform}"
 
-      cp -r "${src_dir}/skill/${SKILL_NAME}" "$target_skill_dir"
-
-      # Standardize SKILL.md for Gemini/others
-      if [[ -f "${target_skill_dir}/Skill.md" ]]; then
-        mv "${target_skill_dir}/Skill.md" "${target_skill_dir}/SKILL.md"
-      fi
-
-      # Install command if platform supports it (OpenCode)
-      if [[ -n "$command_dir" ]]; then
+    # Install command if needed
+    if [[ -n "$command_dir" ]]; then
+      local cmd_src="${src_dir}/command/${skill_name}.md"
+      if [[ -f "$cmd_src" ]]; then
         mkdir -p "$command_dir"
-        local cmd_path="${command_dir}/${SKILL_NAME}.md"
-        # Validate cmd_path is not a sensitive root dir
-        if [[ "$cmd_path" == "/" ]] || [[ "$cmd_path" == "$HOME" ]]; then
-          echo "Safety Error: Dangerous command path: $cmd_path" >&2
-          exit 1
-        fi
-        rm -f "$cmd_path"
-        cp "${src_dir}/command/${SKILL_NAME}.md" "$cmd_path"
-        echo "  Command installed to: ${cmd_path}"
+        cp "$cmd_src" "${command_dir}/${skill_name}.md"
+        echo "  - Installed command: ${skill_name} to ${platform}"
       fi
-
-      echo "  Skill installed to: ${target_skill_dir}"
     fi
   }
 
-  # 3. Define Paths & Execute
-  if [[ "$install_type" == "global" ]]; then
-    # OpenCode
-    install_to "OpenCode (Global)" \
-      "${HOME}/.config/opencode/skills" \
-      "${HOME}/.config/opencode/commands"
+  # 4. Execute
+  for platform in "${target_platforms[@]}"; do
+    local s_base=""
+    local c_base=""
 
-    # Gemini CLI
-    install_to "Gemini CLI (Global)" \
-      "${HOME}/.gemini/skills"
+    if [[ "$install_type" == "global" ]]; then
+      case "$platform" in
+        "OpenCode") s_base="$HOME/.config/opencode/skills"; c_base="$HOME/.config/opencode/commands" ;;
+        "Gemini CLI") s_base="$HOME/.gemini/skills" ;;
+        "Claude") s_base="$HOME/.claude/skills" ;;
+        "FactoryAI Droid") s_base="$HOME/.factory/skills" ;;
+        "Agents") s_base="$HOME/.config/agents/skills" ;;
+        "Antigravity") s_base="$HOME/.antigravity/skills" ;;
+      esac
+    else
+      case "$platform" in
+        "OpenCode") s_base=".opencode/skills"; c_base=".opencode/commands" ;;
+        "Gemini CLI") s_base=".gemini/skills" ;;
+        "Claude") s_base=".claude/skills" ;;
+        "FactoryAI Droid") s_base=".factory/skills" ;;
+        "Agents") s_base=".agents/skills" ;;
+        "Antigravity") s_base=".antigravity/skills" ;;
+      esac
+    fi
 
-    # Claude
-    install_to "Claude (Global)" \
-      "${HOME}/.claude/skills"
-
-    # FactoryAI Droid
-    install_to "FactoryAI Droid (Global)" \
-      "${HOME}/.factory/skills"
-
-    # Agents
-    install_to "Agents (Global)" \
-      "${HOME}/.config/agents/skills"
-
-    # Antigravity
-    install_to "Antigravity (Global)" \
-      "${HOME}/.antigravity/skills"
-  else
-    # OpenCode
-    install_to "OpenCode (Local)" \
-      ".opencode/skills" \
-      ".opencode/commands"
-
-    # Gemini CLI
-    install_to "Gemini CLI (Local)" \
-      ".gemini/skills"
-
-    # Claude
-    install_to "Claude (Local)" \
-      ".claude/skills"
-
-    # FactoryAI Droid
-    install_to "FactoryAI Droid (Local)" \
-      ".factory/skills"
-
-    # Agents
-    install_to "Agents (Local)" \
-      ".agents/skills"
-
-    # Antigravity
-    install_to "Antigravity (Local)" \
-      ".antigravity/skills"
-  fi
+    if [[ -n "$s_base" ]]; then
+      if [[ ${#target_skills[@]} -gt 0 ]]; then
+        for skill in "${target_skills[@]}"; do
+          install_skill_to "$platform" "$skill" "$s_base" "$c_base"
+        done
+      fi
+    fi
+  done
 
   echo "Done."
 }
