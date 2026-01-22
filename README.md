@@ -47,7 +47,11 @@ The new skill created will contain a similar commands for your skill.
 ## Key Features
 
 - **Standardized Structure**: Enforces consistent folder layout and naming conventions
-- **Systematic Installer**: Multi-platform support with safety guards
+- **Dynamic Multi-Skill Installer**:
+    - Automatically scans `skill/` directory for available skills
+    - Offers interactive toggle menu to select specific skills or "All"
+    - Supports scanning and installing multiple skills from a single repo
+    - Defaults to directory name if `PROJECT_NAME` is unset (fully generic)
 - **Reference Documentation**: Built-in guides for skill creation patterns
 - **Update Support**: Easy skill updates via `--update-skill` flag
 

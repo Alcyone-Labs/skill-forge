@@ -3,7 +3,8 @@ set -euo pipefail
 
 # === CONFIGURATION (REPLACE THESE) ===
 REPO_URL="https://github.com/{user}/{repo}.git"
-PROJECT_NAME="{skill-name}"
+# Default to directory name if PROJECT_NAME is not set
+PROJECT_NAME="${PROJECT_NAME:-$(basename "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
 # =====================================
 
 
@@ -241,30 +242,118 @@ main() {
     done
   fi
 
-  if [[ ${#available_skills[@]} -gt 1 ]]; then
+  if [[ ${#available_skills[@]} -gt 0 ]]; then
     echo ""
-    echo "Available Skills in this package:"
-    PS3="Select skills to install (number), 'all' for all, 'done' when finished: "
-    select skill in "${available_skills[@]}" "all" "done"; do
-      [[ "$skill" == "done" ]] && break
-      if [[ "$skill" == "all" ]]; then
-        target_skills=("${available_skills[@]}")
+    echo "Select skills (toggle with number, comma/space separated, choose Done when finished):"
+
+    while true; do
+      local selection_count=${#target_skills[@]}
+
+      # Display Current Selection
+      if [[ "$selection_count" -gt 0 ]]; then
+        local joined=""
+        for s in "${target_skills[@]}"; do
+          if [[ -n "$joined" ]]; then
+            joined="${joined}, ${s}"
+          else
+            joined="$s"
+          fi
+        done
+        echo "Current selection: ${joined}"
+      else
+        echo "Current selection: (none)"
+      fi
+
+      # Options
+      local total_skills=${#available_skills[@]}
+      local idx_all=$((total_skills + 1))
+      local idx_done=$((total_skills + 2))
+
+      local i=0
+      for skill in "${available_skills[@]}"; do
+        i=$((i+1))
+        echo "${i}) ${skill}"
+      done
+
+      local select_all_label="Select All"
+      if [[ "$selection_count" -gt 0 ]]; then
+        select_all_label="Deselect All"
+      fi
+
+      echo "${idx_all}) ${select_all_label}"
+      echo "${idx_done}) Done"
+
+      read -r -p "Skill(s): " skill_input
+      skill_input="${skill_input//,/ }"
+
+      if [[ -z "$skill_input" ]]; then
+        echo "Invalid selection."
+        echo ""
+        continue
+      fi
+
+      if [[ "$skill_input" == "done" || "$skill_input" == "$idx_done" ]]; then
         break
       fi
-      if [[ -n "$skill" ]]; then
-        if [[ ! " ${target_skills[*]} " =~ " ${skill} " ]]; then
-          target_skills+=("$skill")
-          echo "Added: $skill"
+
+      if [[ "$skill_input" == "all" || "$skill_input" == "$idx_all" ]]; then
+        if [[ "$selection_count" -gt 0 ]]; then
+          target_skills=()
+          echo "Deselected: All"
+        else
+          target_skills=("${available_skills[@]}")
+          echo "Selected: All"
         fi
+        echo ""
+        continue
       fi
+
+      # Parse numbers
+      for token in $skill_input; do
+        if [[ "$token" =~ ^[0-9]+$ ]]; then
+          if [[ "$token" -ge 1 && "$token" -le "$total_skills" ]]; then
+            local selected="${available_skills[$((token-1))]}"
+
+            # Toggle
+            if [[ " ${target_skills[*]-} " =~ " ${selected} " ]]; then
+              # Remove
+              local new_list=()
+              for s in "${target_skills[@]}"; do
+                [[ "$s" == "$selected" ]] && continue
+                new_list+=("$s")
+              done
+              target_skills=("${new_list[@]}")
+              echo "Deselected: $selected"
+            else
+              # Add
+              target_skills+=("$selected")
+              echo "Selected: $selected"
+            fi
+          elif [[ "$token" -eq "$idx_all" ]]; then
+             # Handle All by number
+             if [[ "$selection_count" -gt 0 ]]; then
+                target_skills=()
+                echo "Deselected: All"
+             else
+                target_skills=("${available_skills[@]}")
+                echo "Selected: All"
+             fi
+          elif [[ "$token" -eq "$idx_done" ]]; then
+             break 2
+          else
+             echo "Invalid number: $token"
+          fi
+        fi
+      done
+      echo ""
     done
   else
     target_skills=("${available_skills[@]}")
   fi
 
-  # If no skills found or selected (e.g. root package), skip skill loop
+  # If no skills found or selected, default to all
   if [[ ${#target_skills[@]} -eq 0 ]] && [[ -d "${src_dir}/skill" ]]; then
-     # Should not happen if default selection works, but safe fallback:
+     echo "No skills selected, defaulting to ALL."
      target_skills=("${available_skills[@]}")
   fi
 
@@ -305,9 +394,15 @@ main() {
       return 1
     fi
 
+    # Explicit copy strategy:
+    # 1. Create base dir
+    # 2. Remove old target dir
+    # 3. Re-create target dir
+    # 4. Copy contents INTO target dir using /. syntax for robustness
     mkdir -p "$base_dir"
     rm -rf "$target_skill_dir"
-    cp -r "${src_dir}/skill/${skill_name}" "$target_skill_dir"
+    mkdir -p "$target_skill_dir"
+    cp -r "${src_dir}/skill/${skill_name}/." "$target_skill_dir/"
 
     # Standardize SKILL.md
     if [[ -f "${target_skill_dir}/Skill.md" ]]; then

@@ -30,11 +30,13 @@ Expert AgentSkills.io architect. ONLY create, refine, package perfect custom Ski
 - NO lowercase skill.md, NO colons in description.
 - references/ MANDATORY: README.md, api.md, configuration.md, patterns.md, gotchas.md per topic.
 - command/ Markdown with OpenCode slash command format.
-- install.sh MUST replicate the Multi-Skill Installer Pattern (see verbatim template in references/install-script/template.sh).
+- install.sh MUST be a copy of `references/install-script/template.sh`. ONLY update the `REPO_URL` constant.
 - Supports `--self`, `--global`/`--local`.
 - Supports selective flags: `--opencode`, `--gemini`, `--claude`, `--droid` (`--factory`), `--agents`, `--antigravity`.
 - Defaults to interactive mode if no flags are provided.
-- Interactive mode prompts for scope (Global/Local), agent selection, and skill selection.
+- Interactive mode prompts for scope (Global/Local), agent selection (toggle menu), and skill selection (toggle menu).
+- Automatically scans `skill/` directory for available skills.
+- Uses dynamic `PROJECT_NAME` based on directory if not set.
 - Interactive mode prompts to update `.gitignore` for local installs.
 - Verbatim APIs/configs from docs.
 - Examples: 2-3 input/output clusters.
@@ -70,7 +72,7 @@ Result: Updated ./skill-forge/ tree with new skill/command added
 
 - **references/core-structure/README.md**: Folder layout, SKILL.md YAML schema, command format. Provides the skeleton every skill must follow. Check before creating new skills.
 - **references/build-patterns/README.md**: When to split references/, 5-file topic set, A-E workflow, best practices. Prevents bloated SKILL.md and ensures consistent structure.
-- **references/install-script/template.sh**: Multi-Skill Installer Template. Supports interactive mode, selective agent targeting, and gitignore updates. MUST use for all generated install.sh files.
+- **references/install-script/template.sh**: Multi-Skill Installer Template. Supports interactive mode, selective agent targeting, and gitignore updates. MUST use as base for all generated `install.sh` files (update `REPO_URL`).
 
 ## Examples
 
