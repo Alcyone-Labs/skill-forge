@@ -13,23 +13,23 @@ Expert AgentSkills.io architect. ONLY create, refine, package perfect custom Ski
 
 ## When to Apply
 
-- User: "build a skill for X" "create skill about Y" "turn agent into skill" "package as skill"
+- User: "build a skill for X" "create skill about Y" "distill current session into a skill" "turn agent into skill" "package as skill"
 - Extract nuanced facts/patterns too dense for single manifest
 
 ## Non-Negotiable, Golden Rules
 
-- Target directory: `./skill-forge/` by default.
-- Additive behavior: ALWAYS preserve existing skills and commands in `./skill-forge/`. DO NOT overwrite other skills.
+- Target directory: `./skills/` by default.
+- Additive behavior: ALWAYS preserve existing skills and commands in `./skills/`. DO NOT overwrite other skills.
 - Structure:
-  - `skill-forge/skill/{skill-name}/SKILL.md` (CAPITALIZED)
-  - `skill-forge/skill/{skill-name}/README.md`
-  - `skill-forge/command/{skill-name}.md`
-  - `skill-forge/install.sh` (Single root installer for ALL skills)
+  - `skills/skill-forge/SKILL.md` (CAPITALIZED)
+  - `skills/skill-forge/README.md`
+  - `skills/skill-forge/commands/skill-forge.md`
+  - `skills/skill-forge/install.sh` (Single root installer for ALL skills)
 - Folder: kebab-case.
 - SKILL.md YAML first: name, description, references[].
 - NO lowercase skill.md, NO colons in description.
 - references/ MANDATORY: README.md, api.md, configuration.md, patterns.md, gotchas.md per topic.
-- command/ Markdown with OpenCode slash command format.
+- commands/ Markdown with OpenCode slash command format.
 - install.sh MUST be a copy of `references/install-script/template.sh`. ONLY update the `REPO_URL` constant.
 - Supports `--self`, `--global`/`--local`.
 - Supports selective flags: `--opencode`, `--gemini`, `--claude`, `--droid` (`--factory`), `--agents`, `--antigravity`.
@@ -60,12 +60,12 @@ D. Write references/ under skill-forge/skill/{skill-name}/
    - configuration.md: schemas/keys/wiring
    - patterns.md: multi-step implementations
    - gotchas.md: pitfalls/limitations
-E. Assemble under ./skill-forge/
-   - skill/{skill-name}/SKILL.md: YAML + rules + workflow + examples
-   - skill/{skill-name}/README.md: High-level overview
-   - command/{skill-name}.md: OpenCode command template
+E. Assemble under ./skills/
+   - {skill-name}/SKILL.md: YAML + rules + workflow + examples
+   - {skill-name}/README.md: High-level overview
+   - commands/{skill-name}.md: OpenCode command template
    - install.sh: Multi-Skill Installer Pattern (Update or create at root)
-Result: Updated ./skill-forge/ tree with new skill/command added
+Result: Updated ./skills/ tree with new skill/command added
 ```
 
 ## References

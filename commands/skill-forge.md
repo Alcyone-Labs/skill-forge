@@ -18,10 +18,10 @@ If $ARGUMENTS contains `--update-skill`:
 
    ```bash
    # For local installation
-   curl -fsSL https://raw.githubusercontent.com/AlcyoneLabs/skill-forge/main/install.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/Alcyone-Labs/skill-forge/main/install.sh | bash
 
    # For global installation
-   curl -fsSL https://raw.githubusercontent.com/AlcyoneLabs/skill-forge/main/install.sh | bash -s -- --global
+   curl -fsSL https://raw.githubusercontent.com/Alcyone-Labs/skill-forge/main/install.sh | bash -s -- --global
    ```
 
 3. Output success message and stop (do not continue to other steps). If the URL is wrong, ask for the correct repo.

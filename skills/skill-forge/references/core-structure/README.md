@@ -3,12 +3,12 @@
 ## Folder Layout
 
 skill-forge/
-├── skill/
+├── skills/
 │ └���─ {skill-name}/
 │ ├── SKILL.md # CAPITALIZED manifest router
 │ ├── README.md # Skill overview
 │ └── references/ # {topic}/[README api config patterns gotchas].md
-├── command/
+├── commands/
 │ └── {skill-name}.md # OpenCode slash command
 └── install.sh # Global installer for all skills in this folder
 
@@ -29,7 +29,7 @@ Body: When Apply | Rules | Workflow Tree | 2-3 Examples
 
 ## Command Format
 
-`command/{skill-name}.md`
+`commands/{skill-name}.md`
 
 ```
 ---

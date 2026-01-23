@@ -233,10 +233,10 @@ main() {
   fi
 
   # C. Select Skills
-  # Detect skills in src_dir/skill/
+  # Detect skills in src_dir/skills/
   available_skills=()
-  if [[ -d "${src_dir}/skill" ]]; then
-    for skill_dir in "${src_dir}/skill"/*; do
+  if [[ -d "${src_dir}/skills" ]]; then
+    for skill_dir in "${src_dir}/skills"/*; do
       [[ -d "$skill_dir" ]] || continue
       available_skills+=("$(basename "$skill_dir")")
     done
@@ -352,7 +352,7 @@ main() {
   fi
 
   # If no skills found or selected, default to all
-  if [[ ${#target_skills[@]} -eq 0 ]] && [[ -d "${src_dir}/skill" ]]; then
+  if [[ ${#target_skills[@]} -eq 0 ]] && [[ -d "${src_dir}/skills" ]]; then
      echo "No skills selected, defaulting to ALL."
      target_skills=("${available_skills[@]}")
   fi
@@ -402,7 +402,7 @@ main() {
     mkdir -p "$base_dir"
     rm -rf "$target_skill_dir"
     mkdir -p "$target_skill_dir"
-    cp -r "${src_dir}/skill/${skill_name}/." "$target_skill_dir/"
+    cp -r "${src_dir}/skills/${skill_name}/." "$target_skill_dir/"
 
     # Standardize SKILL.md
     if [[ -f "${target_skill_dir}/Skill.md" ]]; then
@@ -412,7 +412,7 @@ main() {
 
     # Install command if needed
     if [[ -n "$command_dir" ]]; then
-      local cmd_src="${src_dir}/command/${skill_name}.md"
+      local cmd_src="${src_dir}/commands/${skill_name}.md"
       if [[ -f "$cmd_src" ]]; then
         mkdir -p "$command_dir"
         cp "$cmd_src" "${command_dir}/${skill_name}.md"

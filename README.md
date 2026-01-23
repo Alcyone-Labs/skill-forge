@@ -13,13 +13,11 @@ Standardized skill creation framework for [Agent Skills](https://AgentSkills.io)
 
 ```
 skill-forge/
-├── skill/skill-forge/
-│   ├── SKILL.md          # Skill manifest and workflow
-│   └── references/       # Documentation for skill creation
-│       ├── core-structure/
-│       ├── build-patterns/
-│       └── install-script/
-├── command/skill-forge.md # OpenCode slash command
+├── skills/
+│   └── skill-forge/
+│       ├── SKILL.md          # Skill manifest and workflow
+│       └── references/       # Documentation for skill creation
+├── commands/skill-forge.md # OpenCode slash command
 └── install.sh            # Systematic installer
 ```
 
@@ -48,7 +46,7 @@ The new skill created will contain a similar commands for your skill.
 
 - **Standardized Structure**: Enforces consistent folder layout and naming conventions
 - **Dynamic Multi-Skill Installer**:
-    - Automatically scans `skill/` directory for available skills
+    - Automatically scans `skills/` directory for available skills
     - Offers interactive toggle menu to select specific skills or "All"
     - Supports scanning and installing multiple skills from a single repo
     - Defaults to directory name if `PROJECT_NAME` is unset (fully generic)
