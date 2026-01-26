@@ -7,7 +7,18 @@ REPO_URL="https://github.com/Alcyone-Labs/skill-forge.git"
 PROJECT_NAME="${PROJECT_NAME:-$(basename "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
 # ======================
 
-
+# Helper to normalize platform name to folder name
+normalize_platform() {
+  case "$1" in
+    "OpenCode") echo "opencode" ;;
+    "Gemini CLI") echo "gemini" ;;
+    "Claude") echo "claude" ;;
+    "FactoryAI Droid") echo "droid" ;;
+    "Agents") echo "agents" ;;
+    "Antigravity") echo "antigravity" ;;
+    *) echo "unknown" ;;
+  esac
+}
 
 usage() {
   cat <<EOF
@@ -33,8 +44,6 @@ Interactive Mode:
   If no flags are provided, an interactive prompt will guide you.
 EOF
 }
-
-
 
 # Helper to add to .gitignore if not present
 update_gitignore() {
@@ -129,7 +138,7 @@ main() {
       fi
       echo "1) OpenCode  2) Gemini CLI  3) Claude  4) FactoryAI Droid"
       echo "5) Agents    6) Antigravity 7) ${select_all_label}  8) Done"
-      read -r -p "Agent(s): " agent_input
+      read -r -p "Agent(s): " agent_input || break
       agent_input="${agent_input//,/ }"
 
       if [[ -z "$agent_input" ]]; then
@@ -285,7 +294,7 @@ main() {
       echo "${idx_all}) ${select_all_label}"
       echo "${idx_done}) Done"
 
-      read -r -p "Skill(s): " skill_input
+      read -r -p "Skill(s): " skill_input || break
       skill_input="${skill_input//,/ }"
 
       if [[ -z "$skill_input" ]]; then
@@ -361,7 +370,7 @@ main() {
 
   # D. Gitignore (Local only)
   if [[ "$install_type" == "local" ]]; then
-    read -p "Add local agent folders to .gitignore? (y/n): " gitignore_choice
+    read -p "Add local agent folders to .gitignore? (y/n): " gitignore_choice || true
     if [[ "$gitignore_choice" =~ ^[Yy]$ ]]; then
       for p in "${target_platforms[@]}"; do
         local p_dir
@@ -390,6 +399,7 @@ main() {
     local command_dir="${4:-}"
 
     local target_skill_dir="${base_dir}/${skill_name}"
+    local p_norm=$(normalize_platform "$platform")
 
     # Safety checks...
     if [[ -z "$skill_name" ]] || [[ "$target_skill_dir" == "/" ]] || [[ "$target_skill_dir" == "$HOME" ]]; then
@@ -414,10 +424,33 @@ main() {
 
     # Install command if needed
     if [[ -n "$command_dir" ]]; then
-      local cmd_src="${src_dir}/commands/${skill_name}.md"
-      if [[ -f "$cmd_src" ]]; then
+      local cmd_src=""
+      local cmd_ext=""
+
+      if [[ "$p_norm" == "opencode" ]]; then
+        cmd_src="${src_dir}/commands/opencode/${skill_name}.md"
+        cmd_ext=".md"
+        # Fallback for backward compatibility
+        if [[ ! -f "$cmd_src" ]]; then
+            cmd_src="${src_dir}/commands/${skill_name}.md"
+        fi
+      elif [[ "$p_norm" == "gemini" ]]; then
+        cmd_src="${src_dir}/commands/gemini/${skill_name}.toml"
+        cmd_ext=".toml"
+      fi
+
+      if [[ -n "$cmd_src" && -f "$cmd_src" ]]; then
         mkdir -p "$command_dir"
-        cp "$cmd_src" "${command_dir}/${skill_name}.md"
+        local target_cmd="${command_dir}/${skill_name}${cmd_ext}"
+
+        cp "$cmd_src" "$target_cmd"
+
+        # Post-process for Gemini
+        if [[ "$p_norm" == "gemini" ]]; then
+           # Use | as delimiter for sed
+           sed "s|{{SKILL_PATH}}|${target_skill_dir}|g" "$target_cmd" > "$target_cmd.tmp" && mv "$target_cmd.tmp" "$target_cmd"
+        fi
+
         echo "  - Installed command: ${skill_name} to ${platform}"
       fi
     fi
@@ -431,7 +464,7 @@ main() {
     if [[ "$install_type" == "global" ]]; then
       case "$platform" in
         "OpenCode") s_base="$HOME/.config/opencode/skills"; c_base="$HOME/.config/opencode/commands" ;;
-        "Gemini CLI") s_base="$HOME/.gemini/skills" ;;
+        "Gemini CLI") s_base="$HOME/.gemini/skills"; c_base="$HOME/.gemini/commands" ;;
         "Claude") s_base="$HOME/.claude/skills" ;;
         "FactoryAI Droid") s_base="$HOME/.factory/skills" ;;
         "Agents") s_base="$HOME/.config/agents/skills" ;;
@@ -440,7 +473,7 @@ main() {
     else
       case "$platform" in
         "OpenCode") s_base=".opencode/skills"; c_base=".opencode/commands" ;;
-        "Gemini CLI") s_base=".gemini/skills" ;;
+        "Gemini CLI") s_base=".gemini/skills"; c_base=".gemini/commands" ;;
         "Claude") s_base=".claude/skills" ;;
         "FactoryAI Droid") s_base=".factory/skills" ;;
         "Agents") s_base=".agents/skills" ;;

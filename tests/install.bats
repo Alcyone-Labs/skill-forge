@@ -50,7 +50,7 @@ teardown() {
 @test "install.sh updates .gitignore on local install" {
   cd "$TEMP_DIR"
   touch ".gitignore"
-  printf "2\n6\n8\ny\n" | run bash "$BATS_TEST_DIRNAME/../install.sh" --self
+  run bash -c "printf '2\n6\n8\n3\ny\n' | bash '$BATS_TEST_DIRNAME/../install.sh' --self"
   [ "$status" -eq 0 ]
   grep -q ".antigravity/" ".gitignore"
 }
@@ -64,21 +64,21 @@ teardown() {
 
 @test "install.sh interactive: global install defaults to agents" {
   cd "$TEMP_DIR"
-  printf "1\n5\n8\n" | run bash "$BATS_TEST_DIRNAME/../install.sh" --self
+  run bash -c "printf '1\n5\n8\n' | bash '$BATS_TEST_DIRNAME/../install.sh' --self"
   [ "$status" -eq 0 ]
   [ -d "$HOME/.config/agents/skills" ]
 }
 
 @test "install.sh interactive: local install toggles agents correctly" {
   cd "$TEMP_DIR"
-  printf "2\n1\n8\nn\n" | run bash "$BATS_TEST_DIRNAME/../install.sh" --self
+  run bash -c "printf '2\n1\n8\nn\n' | bash '$BATS_TEST_DIRNAME/../install.sh' --self"
   [ "$status" -eq 0 ]
   [ -d ".opencode/skills" ]
 }
 
 @test "install.sh interactive: select all installs multiple agents" {
   cd "$TEMP_DIR"
-  printf "1\n7\n8\n" | run bash "$BATS_TEST_DIRNAME/../install.sh" --self
+  run bash -c "printf '1\n7\n8\n' | bash '$BATS_TEST_DIRNAME/../install.sh' --self"
   [ "$status" -eq 0 ]
   [ -d "$HOME/.config/agents/skills" ]
   [ -d "$HOME/.config/opencode/skills" ]
