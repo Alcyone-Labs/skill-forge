@@ -9,7 +9,10 @@ skill-forge/
 │ ├── README.md # Skill overview
 │ └── references/ # {topic}/[README api config patterns gotchas].md
 ├── commands/
-│ └── {skill-name}.md # OpenCode slash command
+│   ├── opencode/
+│   │   └── {skill-name}.md   # OpenCode slash command
+│   └── gemini/
+│       └── {skill-name}.toml # Gemini CLI command
 └── install.sh # Global installer for all skills in this folder
 
 ## SKILL.md YAML
@@ -29,7 +32,9 @@ Body: When Apply | Rules | Workflow Tree | 2-3 Examples
 
 ## Command Format
 
-`commands/{skill-name}.md`
+### OpenCode
+
+`commands/opencode/{skill-name}.md`
 
 ```
 ---
@@ -41,4 +46,19 @@ If $ARGUMENTS --update-skill: run install.sh --local/global; stop
 skill({ name: '{skill-name}' })
 
 Task type from $ARGUMENTS. Read relevant references/. Execute.
+```
+
+### Gemini CLI
+
+`commands/gemini/{skill-name}.toml`
+
+```toml
+description = "Command description"
+
+prompt = """
+Instructions...
+
+@{{{SKILL_PATH}}/{skill-name}/SKILL.md}
+...
+"""
 ```

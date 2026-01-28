@@ -23,13 +23,16 @@ Expert AgentSkills.io architect. ONLY create, refine, package perfect custom Ski
 - Structure:
   - `skills/skill-forge/SKILL.md` (CAPITALIZED)
   - `skills/skill-forge/README.md`
-  - `skills/skill-forge/commands/skill-forge.md`
+  - `skills/skill-forge/commands/opencode/skill-forge.md`
+  - `skills/skill-forge/commands/gemini/skill-forge.toml`
   - `skills/skill-forge/install.sh` (Single root installer for ALL skills)
 - Folder: kebab-case.
 - SKILL.md YAML first: name, description, references[].
 - NO lowercase skill.md, NO colons in description.
 - references/ MANDATORY: README.md, api.md, configuration.md, patterns.md, gotchas.md per topic.
-- commands/ Markdown with OpenCode slash command format.
+- commands/
+  - opencode/{skill-name}.md (OpenCode slash command)
+  - gemini/{skill-name}.toml (Gemini CLI command)
 - install.sh MUST be a copy of `references/install-script/template.sh`. ONLY update the `REPO_URL` constant.
 - Supports `--self`, `--global`/`--local`.
 - Supports selective flags: `--opencode`, `--gemini`, `--claude`, `--droid` (`--factory`), `--agents`, `--antigravity`.
@@ -63,7 +66,8 @@ D. Write references/ under skill-forge/skill/{skill-name}/
 E. Assemble under ./skills/
    - {skill-name}/SKILL.md: YAML + rules + workflow + examples
    - {skill-name}/README.md: High-level overview
-   - commands/{skill-name}.md: OpenCode command template
+  - commands/opencode/{skill-name}.md: OpenCode command template
+  - commands/gemini/{skill-name}.toml: Gemini CLI command template
    - install.sh: Multi-Skill Installer Pattern (Update or create at root)
 Result: Updated ./skills/ tree with new skill/command added
 ```
