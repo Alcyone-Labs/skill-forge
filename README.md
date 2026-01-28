@@ -8,6 +8,7 @@ Standardized skill creation framework for [Agent Skills](https://AgentSkills.io)
 - Standardize skill structure across platforms (OpenCode, Gemini CLI, Claude, FactoryAI Droid)
 - Provide systematic installation patterns with safety guards
 - Enable easy skill updates and maintenance
+- Fully integrated command support for FactoryAI Droid
 
 ## Structure
 
@@ -17,7 +18,10 @@ skill-forge/
 │   └── skill-forge/
 │       ├── SKILL.md          # Skill manifest and workflow
 │       └── references/       # Documentation for skill creation
-├── commands/skill-forge.md # OpenCode slash command
+├── commands/
+│   ├── opencode/skill-forge.md # OpenCode slash command
+│   ├── gemini/skill-forge.toml # Gemini CLI command
+│   └── droid/skill-forge.md    # FactoryAI Droid command
 └── install.sh            # Systematic installer
 ```
 
