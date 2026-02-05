@@ -85,8 +85,17 @@ main() {
 
   # Detect Source
   local src_dir
+  local single_skill_mode=false
+  local single_skill_name=""
   if [[ "$self_install" == true ]]; then
     src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    # Check if we're in single-skill mode (no skills/ subdirectory but looks like a skill)
+    if [[ ! -d "${src_dir}/skills" ]] && [[ -f "${src_dir}/Skill.md" || -f "${src_dir}/SKILL.md" ]]; then
+      single_skill_mode=true
+      single_skill_name="$(basename "$src_dir")"
+      # Set src_dir to parent to maintain compatibility with the rest of the script
+      src_dir="$(dirname "$src_dir")"
+    fi
   else
     src_dir=$(mktemp -d)
     trap "rm -rf '$src_dir'" EXIT
@@ -246,7 +255,10 @@ main() {
   # C. Select Skills
   # Detect skills in src_dir/skills/
   available_skills=()
-  if [[ -d "${src_dir}/skills" ]]; then
+  if [[ "$single_skill_mode" == true ]]; then
+    # Running from within a single skill directory
+    available_skills+=("$single_skill_name")
+  elif [[ -d "${src_dir}/skills" ]]; then
     for skill_dir in "${src_dir}/skills"/*; do
       [[ -d "$skill_dir" ]] || continue
       available_skills+=("$(basename "$skill_dir")")
@@ -414,7 +426,16 @@ main() {
     mkdir -p "$base_dir"
     rm -rf "$target_skill_dir"
     mkdir -p "$target_skill_dir"
-    cp -r "${src_dir}/skills/${skill_name}/." "$target_skill_dir/"
+    
+    # Determine skill source path based on mode
+    local skill_src_path
+    if [[ "$single_skill_mode" == true ]]; then
+      skill_src_path="${src_dir}/${skill_name}"
+    else
+      skill_src_path="${src_dir}/skills/${skill_name}"
+    fi
+    
+    cp -r "${skill_src_path}/." "$target_skill_dir/"
 
     # Standardize SKILL.md
     if [[ -f "${target_skill_dir}/Skill.md" ]]; then
@@ -426,16 +447,24 @@ main() {
     if [[ -n "$command_dir" ]]; then
       local cmd_src=""
       local cmd_ext=""
+      local cmd_base=""
+      
+      # Determine commands base path based on mode
+      if [[ "$single_skill_mode" == true ]]; then
+        cmd_base="${src_dir}/../commands"
+      else
+        cmd_base="${src_dir}/commands"
+      fi
 
       if [[ "$p_norm" == "opencode" ]]; then
-        cmd_src="${src_dir}/commands/opencode/${skill_name}.md"
+        cmd_src="${cmd_base}/opencode/${skill_name}.md"
         cmd_ext=".md"
         # Fallback for backward compatibility
         if [[ ! -f "$cmd_src" ]]; then
-            cmd_src="${src_dir}/commands/${skill_name}.md"
+            cmd_src="${cmd_base}/${skill_name}.md"
         fi
       elif [[ "$p_norm" == "gemini" ]]; then
-        cmd_src="${src_dir}/commands/gemini/${skill_name}.toml"
+        cmd_src="${cmd_base}/gemini/${skill_name}.toml"
         cmd_ext=".toml"
       fi
 
